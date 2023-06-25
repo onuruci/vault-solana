@@ -16,6 +16,13 @@ const connection = new Connection(cluster, "confirmed");
 const wallet = new Wallet("https://solflare.com/access-wallet");
 const programId = new PublicKey("67CENuySfdUZwbGuc32PU761g5KVktkQC1oUgsXWrZcg");
 
+
+/*
+  Builds the transaction from instructions.
+  Generates a new transaction object, add instructions
+  Sets fee payer and recentblockhash
+  Returns the Transaction object
+*/
 export async function setPayerAndBlockhashTransaction(instructions) {
   const transaction = new Transaction();
   instructions.forEach((element) => {
@@ -27,6 +34,11 @@ export async function setPayerAndBlockhashTransaction(instructions) {
   return transaction;
 }
 
+/*
+  Gets a transaction object as input.
+  Calls wallet to sign the transaction.
+  Serializes the signed transaction and sends it to blockchain
+*/
 export async function signAndSendTransaction(transaction) {
   try {
     console.log("start signAndSendTransaction");
@@ -35,20 +47,28 @@ export async function signAndSendTransaction(transaction) {
     let signature = await connection.sendRawTransaction(
       signedTransaction.serialize()
     );
-    console.log("end signAndSendTransaction");
     return signature;
   } catch (err) {
-    console.log("signAndSendTransaction error", err);
     throw err;
   }
 }
 
+/*
+  Simple function to connect wallet if not connected.
+  This function is called in user called functions,
+  If user is not connected with wallet, it pops up wallet connection.
+*/
 async function checkWallet() {
   if (!wallet.connected) {
     await wallet.connect();
   }
 }
 
+
+/* 
+  Function to generate a new vault.
+  Generates a new PDA, enters required information
+*/
 export async function createCampaign(name) {
   await checkWallet();
   const SEED = "abcdef" + Math.random().toString();
@@ -134,10 +154,6 @@ export const addLamports = async (address) => {
     programId
   );
 
-  const lamports = await connection.getMinimumBalanceForRentExemption(250);
-
-  console.log("LAMPORTS:  ", lamports);
-
   const createDonationControlAccount = SystemProgram.createAccountWithSeed({
     fromPubkey: wallet.publicKey,
     basePubkey: wallet.publicKey,
@@ -197,7 +213,5 @@ export const withdrawFunds = async (address) => {
   ]);
 
   const signature = await signAndSendTransaction(transaction_to_send);
-  console.log("Signed");
   const result = await connection.confirmTransaction(signature);
-  console.log("end sendMessage", result);
 };
